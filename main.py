@@ -56,8 +56,9 @@ def validate_filenames(path, prefix):
 		errors.append("Path is empty: " + str(path))
 		return errors
 	
-	# Check if any files exist other than those in expected_filenames
-	for file in path.iterdir():
+	# Check if any files exist other than those in expected_filenames.
+	# Only check the files in path which begin with prefix.
+	for file in path.glob(f"{prefix}*"):
 		if file.is_file():
 			if file.name not in expected_filenames:
 				errors.append("Unexpected file found: " + file.name)
@@ -85,7 +86,9 @@ def main():
 	prefix = args.prefix
 
 	results = validate_filenames(path, prefix)
-	print("Passed" if results else f"Failed\n{results}", end="\n\n")
+	joined_results = '\n'.join(results)
+	print("Passed" if results==True else f"Failed\n{joined_results}", end="\n\n")
+
 
 if __name__ == "__main__":
 	main()
