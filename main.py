@@ -40,6 +40,7 @@ def validate_filenames(path, prefix):
 
 	# Build expected_filenames from prefix + expected_file_suffixes
 	expected_filenames = [prefix + suffix for suffix in expected_file_suffixes]
+	print('\n'.join(expected_filenames))
 
 	# Check if path exists
 	if not path.exists():
