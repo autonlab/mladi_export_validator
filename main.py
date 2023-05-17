@@ -88,8 +88,7 @@ def main():
 	prefix = args.prefix
 
 	results = validate_filenames(path, prefix)
-	joined_results = '\n'.join(results)
-	print("Passed" if results==True else f"Failed\n{joined_results}", end="\n\n")
+	print("Passed" if results==True else "Failed\n" + '\n'.join(results), end="\n\n")
 
 
 if __name__ == "__main__":
