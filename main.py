@@ -2,6 +2,7 @@ from pathlib import Path
 import argparse
 
 expected_file_suffixes = [
+	'enum.csv',
 	'enumeration.csv',
 	'enumerationvalue.csv',
 	'numeric.csv',
@@ -20,7 +21,7 @@ expected_file_suffixes = [
   	'micro.csv',
 	'suscep.csv',
 	'dialysis_ce.csv',
-	'dl_details_recents.csv',
+	'dl_details_recent.csv',
 	'surg.csv',
 	'alert.csv',
 	'demo.csv',
