@@ -68,9 +68,9 @@ class Validator:
 			if result == True:
 				print("Passed")
 			else:
-				print("Failed")
+				result_string = result if isinstance(result, str) else '\n'.join(result)
+				print(f"Failed\n{result_string}")
 				num_errors += 1
-			
 		
 		# Print and return results
 		if num_errors == 0:
@@ -85,7 +85,7 @@ class Validator:
 		Validate that all files in path have the expected filenames.
 		:param path: Path to directory containing the exported files to validate (Path instance)
 		:param prefix: Prefix for all files in directory (string)
-		:return: True if all files are valid, error string otherwise
+		:return: True if all files are valid, list of error strings otherwise
 		"""
 		
 		print("Verifying expected filenames...", end=' ')
@@ -97,10 +97,9 @@ class Validator:
 
 		# If there are unexpected files, return an error string listing the unexpected files
 		if len(unexpected_files_on_disk) > 0:
-			return "Unexpected files found: " + ', '.join([file.name for file in unexpected_files_on_disk])
+			errors.append("Unexpected files found: " + ', '.join([file.name for file in unexpected_files_on_disk]))
 		
-		# If there are no unexpected files, return true
-		return True
+		return errors if len(errors) > 0 else True
 
 	def validate_headers(self):
 		"""
@@ -113,9 +112,12 @@ class Validator:
 	def validate_no_double_headers(self):
 		"""
 		Validate that there are no double headers in any file.
+		:return: True if all files are valid, list of error strings otherwise
 		"""
 
 		print("Verifying no double headers...", end=' ')
+
+		errors = []
 		
 		# Open each file in all_valid_files_on_disk, and compare the first line to the second line.
 		# If they are the same, return an error string listing the file.
@@ -124,7 +126,9 @@ class Validator:
 				first_line = f.readline()
 				second_line = f.readline()
 				if first_line == second_line:
-					return "Double header row found in file: " + file.name
+					errors.append("Double header row found in file: " + file.name)
+
+		return errors if len(errors) > 0 else True
 
 def main():
 
