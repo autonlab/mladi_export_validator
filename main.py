@@ -1,3 +1,8 @@
+"""
+MLADI Export Validation Script
+Usage: For usage instructions, run python main.py -h
+"""
+
 from pathlib import Path
 import argparse
 
