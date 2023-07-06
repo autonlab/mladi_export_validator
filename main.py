@@ -36,16 +36,14 @@ class Validator:
 
 	def __init__(self, path, prefix):
 
-		self.path = Path(path)
-		self.prefix = prefix
-
 		# Check that path exists, is a directory, and is not empty
 		assert path.exists(), "Path does not exist: " + str(path)
 		assert path.is_dir(), "Path is not a directory: " + str(path)
 		assert any(path.iterdir()), "Path is empty: " + str(path)
+		assert prefix[-1] != '_', "Prefix should not end in underscore: " + prefix
 
 		# Build expected_filenames from prefix + expected_file_suffixes
-		self.expected_filenames = [prefix + suffix for suffix in expected_file_suffixes]
+		self.expected_filenames = [f"{prefix}_{suffix}" for suffix in expected_file_suffixes]
 
 		# Get all files matching prefix + expected_file_suffixes
 		self.all_matching_files = [file for file in path.glob(f"{prefix}*") if file.is_file()]
@@ -141,20 +139,43 @@ def main():
 	# If prefix does not end in underscore, add underscore.
 	parser = argparse.ArgumentParser()
 	parser.add_argument("path", help="Path to directory containing the exported files to validate")
-	parser.add_argument("prefix", help="Prefix for all files in directory")
+	parser.add_argument("prefix", default=None, nargs='*', help="Prefix for all files in directory")
 	args = parser.parse_args()
-
-	# Validate prefix
-	if not args.prefix.endswith('_'):
-		args.prefix += '_'
 	
 	# Validate filenames
 	path = Path(args.path)
 	prefix = args.prefix
 
-	validator = Validator(path, prefix)
-	_ = validator.validate()
+	# Initial printout
+	print()
+	print(f"Path is: {path}")
+	print(f"Prefix is: {prefix if prefix else '[not provided / test all patients in folder]'}")
 
+	# Assemble list of prefixes to test
+	if prefix is None or len(prefix) == 0:
+		prefixes = set(['_'.join(str(p).split('/')[-1].split('_')[:2]) for p in path.glob('*.csv')])
+	else:
+		assert type(prefix) == list, "Prefix must be a list of strings"
+		assert len(prefix) > 0, "Prefix must be a non-empty list of strings"
+		prefixes = prefix
+
+	print()
+	failed_patients = []
+	for	prefix in list(prefixes):
+		prefix = prefix.strip('_')
+		print(f"Testing patient {prefix} in {path}")
+		validator = Validator(path, prefix)
+		passed = validator.validate()
+		if not passed:
+			failed_patients.append(prefix)
+		print()
+
+	print("Summary\n-------")
+	if len(failed_patients) == 0:
+		print("All patients passed.")
+	else:
+		print(f"{len(failed_patients)} patients failed: {', '.join(failed_patients)}")
+	print()
 
 if __name__ == "__main__":
 	main()
