@@ -5,6 +5,11 @@ Usage: For usage instructions, run python main.py -h
 
 from pathlib import Path
 import argparse
+import numpy as np
+import pandas as pd
+
+# TO-DO:
+# - Validate that all files exist.
 
 expected_file_suffixes = [
 	'enum.csv',
@@ -42,6 +47,9 @@ class Validator:
 		assert any(path.iterdir()), "Path is empty: " + str(path)
 		assert prefix[-1] != '_', "Prefix should not end in underscore: " + prefix
 
+		self.path = path
+		self.prefix = prefix
+
 		# Build expected_filenames from prefix + expected_file_suffixes
 		self.expected_filenames = [f"{prefix}_{suffix}" for suffix in expected_file_suffixes]
 
@@ -61,6 +69,7 @@ class Validator:
 			self.validate_filenames,
 			#self.validate_headers,
 			self.validate_no_double_headers,
+			self.validate_no_empty_dates,
 		]
 
 		num_errors = 0
@@ -104,14 +113,6 @@ class Validator:
 		
 		return errors if len(errors) > 0 else True
 
-	def validate_headers(self):
-		"""
-		Validate that all files in path have the expected headers.
-		"""
-
-		print("Verifying expected filenames [CHECK NOT BUILD YET]...", end=' ')
-		return True
-
 	def validate_no_double_headers(self):
 		"""
 		Validate that there are no double headers in any file.
@@ -132,6 +133,63 @@ class Validator:
 					errors.append("Double header row found in file: " + file.name)
 
 		return errors if len(errors) > 0 else True
+
+	def validate_no_duplicate_lines(self):
+		"""
+		Validate that there are no duplicate lines in any file.
+		"""
+		
+		print("Verifying no duplicate lines...", end=' ')
+
+		errors = []
+
+		# Open each file in all_valid_files_on_disk, and compare each line to the previous line.
+		# If they are the same, return an error string listing the file.
+		for file in self.all_valid_files_on_disk:
+			with file.open() as f:
+				previous_line = None
+				for line in f:
+					if line == previous_line:
+						errors.append("Duplicate line found in file: " + file.name)
+					previous_line = line
+
+		return errors if len(errors) > 0 else True
+
+	def validate_no_empty_dates(self):
+		"""
+		Validate that there are no empty dates in EHR files.
+		"""
+
+		print("Verifying no empty dates...", end=' ')
+
+		file_columns_to_check = {
+			'ce': ['DATE'],
+			'cs': ['FORM_DATE'],
+			'cs_ce': ['date'],
+			'demo': ['REG_DATE', 'DISCH_DATE'],
+			'icd': ['DATE'],
+			'io': ['DATE'],
+			'lab': ['EVENT_DATE', 'VALID_DATE'],
+			'loc': ['BEG_DATE', 'END_DATE'],
+			'meds': ['CHART_DATE'],
+			'patient': ['Timestamp'],
+		}
+
+		errors = []
+
+		for file_suffix, cols in file_columns_to_check.items():
+			try:
+				df = pd.read_csv(self.path / f"{self.prefix}_{file_suffix}.csv", escapechar='\\')
+			except Exception as e:
+				errors.append(f"Error reading {self.prefix}_{file_suffix}.csv: {e}")
+				continue
+			for col in cols:
+				if len(np.where(pd.isnull(df[col]))[0]) > 0:
+					errors.append(f"Empty dates found in {col} column of {self.prefix}_{file_suffix}.csv")
+
+		return errors if len(errors) > 0 else True
+
+
 
 def main():
 
