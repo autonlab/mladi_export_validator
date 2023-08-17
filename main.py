@@ -67,6 +67,7 @@ class Validator:
 		# Build a list of validator functions so we can run them in a loop
 		validator_functions = [
 			self.validate_filenames,
+			self.validate_discharge_date,
 			#self.validate_headers,
 			self.validate_no_double_headers,
 			self.validate_no_empty_dates,
@@ -92,6 +93,20 @@ class Validator:
 			print(f"{num_errors} tests failed.")
 			return False
 
+	def validate_discharge_date(self):
+
+		print("Verifying discharge date...", end=' ')
+
+		df = pd.read_csv(self.path / f"{self.prefix}_demo.csv", escapechar='\\', parse_dates=['DISCH_DATE'])
+
+		# There is only one row. Get the DISCH_DATE value from the first row, and validate that it's between 2000 and the year of the current date
+		discharge_date = df['DISCH_DATE'][0]
+		if discharge_date.year < 2000 or discharge_date.year > pd.Timestamp.now().year:
+			return [f"Discharge date is invalid: {discharge_date}"]
+		else:
+			return True
+
+	
 	def validate_filenames(self):
 		"""
 		Validate that all files in path have the expected filenames.
